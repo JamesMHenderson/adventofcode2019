@@ -1,4 +1,4 @@
-import { calculateTotal, calculateMass, calculateFuelMass, calculateTotalFuelMass } from './Day1';
+import { calculateTotal, calculateMass, calculateFuelMass, calculateTotalFuelMass } from './day1';
 import input from './input.txt';
 
 describe('Day 1', () => {
