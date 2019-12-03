@@ -18,6 +18,6 @@ describe('day 2', () => {
     });
 
     test('part2', () => {
-        console.log(findInput(input, 19690720));
+        expect(findInput(input, 19690720)).toBe(6086);
     });
 });
