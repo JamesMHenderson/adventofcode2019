@@ -68,4 +68,4 @@ const numberPasswordsPart2 = (input1: number, input2: number): number => {
     return count;
 };
 
-export { numberPasswords, numberPasswordsPart2 }
+export { numberPasswords, numberPasswordsPart2 };

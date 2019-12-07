@@ -77,4 +77,4 @@ const findRoute = (input: Array<string>) => {
     return startToCOM.indexOf(firstShared) + endToCOM.indexOf(firstShared);
 };
 
-export { countOrbits, findRoute};
+export { countOrbits, findRoute };
