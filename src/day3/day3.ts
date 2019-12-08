@@ -1,77 +1,86 @@
-const nextPosition = (instruction: string, startingPosition: string) => {
-    const parsedPosition = startingPosition.split(',').map(x => parseInt(x));
-    const position = [];
+const nextPosition = (instruction: string, position: Array<number>, positions: Array<string>) => {
     const increment = parseInt(instruction.substring(1));
+
+    let instructionFunction: (nextPosition: Array<number>) => void = (): void => {
+        throw Error('undefined function');
+    };
 
     switch (instruction[0]) {
         case 'R':
-            for (let i = 1; i <= increment; i++) {
-                const nextPosition = [...parsedPosition];
-                nextPosition[0] += i;
-                position.push(nextPosition.join(','));
-            }
+            instructionFunction = (nextPosition: Array<number>) => {
+                nextPosition[0]++;
+            };
             break;
         case 'L':
-            for (let i = 1; i <= increment; i++) {
-                const nextPosition = [...parsedPosition];
-                nextPosition[0] -= i;
-                position.push(nextPosition.join(','));
-            }
+            instructionFunction = (nextPosition: Array<number>) => {
+                nextPosition[0]--;
+            };
             break;
         case 'U':
-            for (let i = 1; i <= increment; i++) {
-                const nextPosition = [...parsedPosition];
-                nextPosition[1] += i;
-                position.push(nextPosition.join(','));
-            }
+            instructionFunction = (nextPosition: Array<number>) => {
+                nextPosition[1]++;
+            };
             break;
         case 'D':
-            for (let i = 1; i <= increment; i++) {
-                const nextPosition = [...parsedPosition];
-                nextPosition[1] -= i;
-                position.push(nextPosition.join(','));
-            }
+            instructionFunction = (nextPosition: Array<number>) => {
+                nextPosition[1]--;
+            };
             break;
         default:
             throw Error('Invalid instruction');
     }
 
-    return position;
+    for (let i = 1; i <= increment; i++) {
+        instructionFunction(position);
+        positions.push(position.join(','));
+    }
 };
 
-const getCoords = (input: string): Array<string> =>
-    input.split(',').reduce(
+const getCoords = (input: string): Array<string> => {
+    const position = [0, 0];
+    return input.split(',').reduce(
         (acc, value): Array<string> => {
-            return acc.concat(nextPosition(value, acc[acc.length - 1]));
+            nextPosition(value, position, acc);
+            return acc;
         },
         ['0,0'],
     );
+};
 
 const closest = (input1: string, input2: string): number => {
     const coords1 = getCoords(input1);
     const coords2 = getCoords(input2);
 
-    return coords1
-        .filter(coord => coords2.includes(coord))
-        .map(coord => {
-            const values = coord.split(',');
-            return Math.abs(Number(values[0])) + Math.abs(Number(values[1]));
-        })
-        .reduce((acc, value) => (value < acc || acc === 0 ? value : acc));
+    const lookup: { [coord: string]: string } = {};
+
+    coords2.forEach(coords => {
+        lookup[coords] = coords;
+    });
+
+    return coords1.reduce((acc, coords) => {
+        if (!lookup[coords]) return acc;
+        const values = coords.split(',');
+        const value = Math.abs(Number(values[0])) + Math.abs(Number(values[1]));
+        return value < acc || acc === 0 ? value : acc;
+    }, 0);
 };
 
 const fewestSteps = (input1: string, input2: string): number => {
     const coords1 = getCoords(input1);
     const coords2 = getCoords(input2);
 
-    return coords1.reduce((acc, coord, index1) => {
-        const index2 = coords2.indexOf(coord, 1);
-        if (index2 != -1) {
-            const steps = index1 + index2;
-            return steps < acc || acc === 0 ? steps : acc;
-        }
+    const lookup: { [coord: string]: number } = {};
 
-        return acc;
+    coords2.forEach((coords, i) => {
+        lookup[coords] = i;
+    });
+
+    return coords1.reduce((acc, coords, index1) => {
+        const index2 = lookup[coords];
+        if (index2 === undefined) return acc;
+
+        const steps = index1 + index2;
+        return steps < acc || acc === 0 ? steps : acc;
     }, 0);
 };
 

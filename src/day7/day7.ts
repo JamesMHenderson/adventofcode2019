@@ -1,111 +1,30 @@
-type State = {
-    index: number;
-    input: Array<number>;
-    inputIndex: number;
-    inputValues: Array<number>;
-    output: number;
-};
+import { IntcodeComputer } from '../intcodeComputer';
 
-const transform = (state: State) => {
-    let { index: i, inputIndex, inputValues, input } = state;
+const getOutput = (input: string, inputValue: number, phases: Array<number>, loop: boolean): number => {
+    const intcodeComputers: Array<IntcodeComputer> = [];
 
-    while (i < input.length) {
-        const instruction = '0000' + input[i].toString();
-        const value1 = instruction.substr(-3, 1) === '1' ? input[i + 1] : input[input[i + 1]];
-        const value2 = instruction.substr(-4, 1) === '1' ? input[i + 2] : input[input[i + 2]];
+    const firstIntcode = new IntcodeComputer(input, phases[0], inputValue);
 
-        switch (instruction.substr(-2)) {
-            case '01':
-                input[input[i + 3]] = value1 + value2;
-                i += 4;
-                break;
-            case '02':
-                input[input[i + 3]] = value1 * value2;
-                i += 4;
-                break;
-            case '03':
-                input[input[i + 1]] = inputValues[inputIndex];
-                inputIndex++;
-                i += 2;
-                break;
-            case '04':
-                i += 2;
-                state.index = i;
-                state.inputIndex = inputIndex;
-                state.output = value1;
-                return;
-            case '05':
-                if (value1) {
-                    i = value2;
-                } else {
-                    i += 3;
-                }
-                break;
-            case '06':
-                if (!value1) {
-                    i = value2;
-                } else {
-                    i += 3;
-                }
-                break;
-            case '07':
-                if (value1 < value2) {
-                    input[input[i + 3]] = 1;
-                } else {
-                    input[input[i + 3]] = 0;
-                }
-                i += 4;
-                break;
-            case '08':
-                if (value1 === value2) {
-                    input[input[i + 3]] = 1;
-                } else {
-                    input[input[i + 3]] = 0;
-                }
-                i += 4;
-                break;
-            case '99':
-                state.index = 0;
-                return;
-            default:
-                throw new Error('Something went wrong');
-        }
-    }
+    intcodeComputers.push(firstIntcode);
 
-    throw new Error('program did not end');
-};
-
-const getOutput = (input: Array<number>, inputValue: number, phases: Array<number>, loop: boolean): number => {
-    const states: Array<State> = [];
-
-    for (let i = 0; i < phases.length; i++) {
-        const inputValues = [phases[i]];
-        if (i === 0) inputValues.push(inputValue);
-
-        states.push({
-            input: [...input],
-            index: 0,
-            inputValues,
-            inputIndex: 0,
-            output: 0,
-        });
+    for (let i = 1; i < phases.length; i++) {
+        const state = Object.assign(new IntcodeComputer(), { state: [...firstIntcode.state], input: [phases[i]] });
+        intcodeComputers.push(state);
     }
 
     while (true) {
         for (let i = 0; i < phases.length; i++) {
-            const state = states[i];
-            transform(state);
-            states[(i + 1) % phases.length].inputValues.push(state.output);
-            if (i + 1 === phases.length && (!loop || state.index === 0)) {
-                return state.output;
+            const intcodeComputer = intcodeComputers[i];
+            intcodeComputer.run();
+            intcodeComputers[(i + 1) % phases.length].addInput(intcodeComputer.output);
+            if (i + 1 === phases.length && (!loop || intcodeComputer.finished)) {
+                return intcodeComputer.output;
             }
         }
     }
 };
 
 const getHighestOutput = (input: string) => {
-    const inputArray = input.split(',').map(value => Number(value));
-
     let iterations = [[0], [1], [2], [3], [4]];
 
     for (let i = 0; i < 4; i++) {
@@ -113,14 +32,12 @@ const getHighestOutput = (input: string) => {
     }
 
     return iterations.reduce((acc, phases) => {
-        const output = getOutput(inputArray, 0, phases, false);
+        const output = getOutput(input, 0, phases, false);
         return output > acc ? output : acc;
     }, 0);
 };
 
 const getHighestLoopOutput = (input: string) => {
-    const inputArray = input.split(',').map(value => Number(value));
-
     let iterations = [[5], [6], [7], [8], [9]];
 
     for (let i = 0; i < 4; i++) {
@@ -128,7 +45,7 @@ const getHighestLoopOutput = (input: string) => {
     }
 
     return iterations.reduce((acc, phases) => {
-        const output = getOutput(inputArray, 0, phases, true);
+        const output = getOutput(input, 0, phases, true);
         return output > acc ? output : acc;
     }, 0);
 };

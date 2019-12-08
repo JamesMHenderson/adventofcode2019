@@ -1,4 +1,4 @@
-const checkDigitsAccend = (input: Array<number>) => {
+const checkDigitsAscend = (input: Array<number>) => {
     for (let i = input.length; i > 0; i--) {
         if (input[i] < input[i - 1]) {
             input[i] = input[i - 1];
@@ -16,7 +16,7 @@ const numberPasswords = (input1: number, input2: number): number => {
     while (input <= input2) {
         const inputArr = Array.from(input.toString()).map(x => parseInt(x));
 
-        if (!checkDigitsAccend(inputArr)) {
+        if (!checkDigitsAscend(inputArr)) {
             input = inputArr.reduce((acc, val) => {
                 return parseInt(`${acc}${val}`);
             });
@@ -40,7 +40,7 @@ const numberPasswordsPart2 = (input1: number, input2: number): number => {
     while (input <= input2) {
         const inputArr = Array.from(input.toString()).map(x => parseInt(x));
 
-        if (!checkDigitsAccend(inputArr)) {
+        if (!checkDigitsAscend(inputArr)) {
             input = inputArr.reduce((acc, val) => {
                 return parseInt(`${acc}${val}`);
             });

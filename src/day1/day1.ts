@@ -4,15 +4,11 @@ const calculateMass = (mass: number): number => {
 
 const calculateFuelMass = (mass: number): number => {
     let fuel = 0;
-    let nextMass = mass;
-    while (true) {
-        nextMass = calculateMass(nextMass);
-        if (nextMass <= 0) {
-            break;
-        }
+    let nextMass = calculateMass(mass);
+    while (nextMass > 0) {
         fuel += nextMass;
+        nextMass = calculateMass(nextMass);
     }
-
     return fuel;
 };
 

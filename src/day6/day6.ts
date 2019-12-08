@@ -2,7 +2,7 @@ type Orbits = {
     [orbit: string]: string;
 };
 
-type Orbitted = {
+type Orbited = {
     [orbit: string]: Array<string>;
 };
 
@@ -14,8 +14,8 @@ const map = (input: Array<string>): Orbits => {
     }, {});
 };
 
-const mapReverse = (input: Array<string>): Orbitted => {
-    return input.reduce((acc: Orbitted, value: string) => {
+const mapReverse = (input: Array<string>): Orbited => {
+    return input.reduce((acc: Orbited, value: string) => {
         const orbits: Array<string> = value.split(')');
         if (!acc[orbits[0]]) {
             acc[orbits[0]] = [];
