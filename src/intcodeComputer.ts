@@ -1,8 +1,13 @@
 class IntcodeComputer {
     constructor(state?: string, ...input: Array<number>) {
-        this.state = state ? state.split(',').map(value => Number(value)) : [];
+        this.state = state?.split(',').map(value => Number(value)) || [];
         this.input = input;
     }
+
+    private _finished = false;
+    private index = 0;
+    private inputIndex = 0;
+    private relativeBase = 0;
 
     transform(value1: number, value2: number) {
         this.state[1] = value1;
@@ -13,122 +18,117 @@ class IntcodeComputer {
         this.input.push(value);
     }
 
-    endProgram() {
-        this._finished = true;
+    public state: Array<number>;
+    public input: Array<number>;
+    public outputs: Array<number> = [];
+
+    get output(): number {
+        return this.outputs[this.outputs.length - 1];
     }
 
-    private startProgram() {
-        if (this._finished) this.index = 0;
-        this._finished = false;
-    }
-
-    increment(steps: number) {
-        this.index += steps;
-    }
-
-    private _finished: boolean = false;
-    private index: number = 0;
-    private inputIndex: number = 0;
-
-    get finished() {
+    get finished(): boolean {
         return this._finished;
     }
 
-    public state: Array<number>;
-
-    public input: Array<number>;
-    public output: number = 0;
-
-    private get instruction() {
-        return '00000' + this.state[this.index].toString();
+    private increment(steps: number): void {
+        this.index += steps;
     }
 
-    private get firstValue() {
-        return this.instruction.substr(-3, 1) === '1'
-            ? this.state[this.index + 1]
-            : this.state[this.state[this.index + 1]];
+    private instruction(start: number, length?: number): string {
+        return ('00000' + this.state[this.index].toString()).substr(start, length);
     }
 
-    private get secondValue() {
-        return this.instruction.substr(-4, 1) === '1'
-            ? this.state[this.index + 2]
-            : this.state[this.state[this.index + 2]];
+    private position(i: number): number {
+        switch (this.instruction(-(i + 2), 1)) {
+            case '1':
+                return this.index + i;
+            case '2':
+                return (this.state[this.index + i] || 0) + this.relativeBase;
+            default:
+                return this.state[this.index + i] || 0;
+        }
     }
 
-    private sum() {
-        this.state[this.state[this.index + 3]] = this.firstValue + this.secondValue;
+    private value(i: number): number {
+        return this.state[this.position(i)] || 0;
+    }
+
+    private sum(): void {
+        this.state[this.position(3)] = this.value(1) + this.value(2);
         this.increment(4);
     }
 
-    private multiply() {
-        this.state[this.state[this.index + 3]] = this.firstValue * this.secondValue;
+    private multiply(): void {
+        this.state[this.position(3)] = this.value(1) * this.value(2);
         this.increment(4);
     }
 
-    private update() {
-        this.state[this.state[this.index + 1]] = this.input[this.inputIndex];
+    private update(): void {
+        this.state[this.position(1)] = this.input[this.inputIndex];
         this.inputIndex++;
         this.increment(2);
     }
 
-    private outputValue() {
-        this.output = this.firstValue;
+    private outputValue(): void {
+        this.outputs.push(this.value(1));
         this.increment(2);
     }
 
-    private jumpTrue() {
-        this.firstValue ? (this.index = this.secondValue) : this.increment(3);
+    private jumpTrue(): void {
+        this.value(1) ? (this.index = this.value(2)) : this.increment(3);
     }
 
-    private jumpFalse() {
-        this.firstValue ? this.increment(3) : (this.index = this.secondValue);
+    private jumpFalse(): void {
+        this.value(1) ? this.increment(3) : (this.index = this.value(2));
     }
 
-    private lessThan() {
-        this.state[this.state[this.index + 3]] = this.firstValue < this.secondValue ? 1 : 0;
+    private lessThan(): void {
+        this.state[this.position(3)] = this.value(1) < this.value(2) ? 1 : 0;
         this.increment(4);
     }
 
-    private equals() {
-        this.state[this.state[this.index + 3]] = this.firstValue === this.secondValue ? 1 : 0;
+    private equals(): void {
+        this.state[this.position(3)] = this.value(1) === this.value(2) ? 1 : 0;
         this.increment(4);
     }
 
-    run() {
+    private updateRelativeBase(): void {
+        this.relativeBase += this.value(1);
+        this.increment(2);
+    }
+
+    private endProgram(): void {
+        this._finished = true;
+    }
+
+    private startProgram(): void {
+        if (this._finished) this.index = 0;
+        this._finished = false;
+    }
+
+    private instructionObj: { [instruction: string]: () => void } = {
+        '01': this.sum,
+        '02': this.multiply,
+        '03': this.update,
+        '04': this.outputValue,
+        '05': this.jumpTrue,
+        '06': this.jumpFalse,
+        '07': this.lessThan,
+        '08': this.equals,
+        '09': this.updateRelativeBase,
+        '99': this.endProgram,
+    };
+
+    run(toEnd: boolean = false): void {
         this.startProgram();
 
-        while (this.index < this.state.length) {
-            switch (this.instruction.substr(-2)) {
-                case '01':
-                    this.sum();
-                    break;
-                case '02':
-                    this.multiply();
-                    break;
-                case '03':
-                    this.update();
-                    break;
-                case '04':
-                    this.outputValue();
-                    return;
-                case '05':
-                    this.jumpTrue();
-                    break;
-                case '06':
-                    this.jumpFalse();
-                    break;
-                case '07':
-                    this.lessThan();
-                    break;
-                case '08':
-                    this.equals();
-                    break;
-                case '99':
-                    this.endProgram();
-                    return;
-                default:
-                    throw new Error('Something went wrong');
-            }
+        while (!this.finished) {
+            const instruction = this.instructionObj[this.instruction(-2)];
+            if (!instruction) throw new Error('Something went wrong');
+
+            instruction.bind(this)();
+
+            if (instruction === this.outputValue && !toEnd) return;
         }
     }
 }
