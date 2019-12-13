@@ -14,6 +14,10 @@ class IntcodeComputer {
         this.state[2] = value2;
     }
 
+    transform0(value: number) {
+        this.state[0] = value;
+    }
+
     addInput(value: number) {
         this.input.push(value);
     }
