@@ -54,7 +54,7 @@ describe('Day 13', () => {
                 intcodeComputer.run(true);
             }
 
-            expect(score).toBe(309);
+            expect(score).toBe(15410);
         });
     });
 });
