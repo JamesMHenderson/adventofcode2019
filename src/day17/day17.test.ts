@@ -33,16 +33,16 @@ describe('Day 17', () => {
     describe('Part 2', () => {
         test('challenge', () => {
             const intcodeComputer = new IntcodeComputer(input.trim());
+            intcodeComputer.transform0(2);
             const A = 'L,10,R,12,R,12\n'.split('').map(char => char.charCodeAt(0));
             const B = 'R,6,R,10,L,10\n'.split('').map(char => char.charCodeAt(0));
             const C = 'R,10,L,10,L,12,R,6\n'.split('').map(char => char.charCodeAt(0));
-            const end = 'y\n'.split('').map(char => char.charCodeAt(0));
+            const end = 'n\n'.split('').map(char => char.charCodeAt(0));
             const full = 'A,B,A,C,B,C,B,C,A,C\n'.split('').map(char => char.charCodeAt(0));
             intcodeComputer.input = full.concat(A, B, C, end);
-            intcodeComputer.run();
-            console.log(intcodeComputer.output);
+            intcodeComputer.run(true);
 
-            expect(intcodeComputer.output).toBe(3888);
+            expect(intcodeComputer.output).toBe(927809);
         });
     });
 });
